@@ -100,8 +100,8 @@ String OpenMetrics::getPayload(void) {
     }
     // PM values averaged across both channels regardless of brand
     pm01 = (measure.get(Measurements::PM01, 1) + measure.get(Measurements::PM01, 2)) / 2.0f;
-    float correctedPm25_1 = measure.getCorrectedPM25(false, 1);
-    float correctedPm25_2 = measure.getCorrectedPM25(false, 2);
+    float correctedPm25_1 = measure.getCorrectedPM25(true, 1);
+    float correctedPm25_2 = measure.getCorrectedPM25(true, 2);
     float correctedPm25 = (correctedPm25_1 + correctedPm25_2) / 2.0f;
     pm25 = ag->round2(correctedPm25);
     pm10 = (measure.get(Measurements::PM10, 1) + measure.get(Measurements::PM10, 2)) / 2.0f;
@@ -116,7 +116,7 @@ String OpenMetrics::getPayload(void) {
 
       if (ch1HasPm) {
         pm01 = measure.get(Measurements::PM01);
-        float correctedPm = measure.getCorrectedPM25(false, 1);
+        float correctedPm = measure.getCorrectedPM25(true, 1);
         pm25 = ag->round2(correctedPm);
         pm10 = measure.get(Measurements::PM10);
         pm03PCount = measure.get(Measurements::PM03_PC);
@@ -129,7 +129,7 @@ String OpenMetrics::getPayload(void) {
           _hum = measure.getFloat(Measurements::Humidity, 1);
         }
         pm01 = measure.get(Measurements::PM01, 1);
-        float correctedPm = measure.getCorrectedPM25(false, 1);
+        float correctedPm = measure.getCorrectedPM25(true, 1);
         pm25 = ag->round2(correctedPm);
         pm10 = measure.get(Measurements::PM10, 1);
         pm03PCount = measure.get(Measurements::PM03_PC, 1);
@@ -140,7 +140,7 @@ String OpenMetrics::getPayload(void) {
           _hum = measure.getFloat(Measurements::Humidity, 2);
         }
         pm01 = measure.get(Measurements::PM01, 2);
-        float correctedPm = measure.getCorrectedPM25(false, 2);
+        float correctedPm = measure.getCorrectedPM25(true, 2);
         pm25 = ag->round2(correctedPm);
         pm10 = measure.get(Measurements::PM10, 2);
         pm03PCount = measure.get(Measurements::PM03_PC, 2);
