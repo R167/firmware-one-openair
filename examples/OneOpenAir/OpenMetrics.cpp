@@ -164,12 +164,38 @@ String OpenMetrics::getPayload(void) {
     atmpCompensated = round(measure.getCorrectedTempHum(Measurements::Temperature));
     rhumCompensated = round(measure.getCorrectedTempHum(Measurements::Humidity));
   } else {
-    atmpCompensated = round((measure.getCorrectedTempHum(Measurements::Temperature, 1) +
-                             measure.getCorrectedTempHum(Measurements::Temperature, 2)) /
-                            2.0f);
-    rhumCompensated = round((measure.getCorrectedTempHum(Measurements::Humidity, 1) +
-                             measure.getCorrectedTempHum(Measurements::Humidity, 2)) /
-                            2.0f);
+    // Same channel selection as the JSON (Measurements::buildPMS): T/RH only
+    // from PMS5003T channels, and only while the channel's average is valid.
+    // A single-PMS Open Air (O-1PST) must not average in channel 2, whose
+    // average stays at the invalid sentinel; nor may a dead or not-yet-read
+    // channel (compensateHum(-1) is a plausible-looking 6 %).
+    bool t1 = config.hasSensorPMS1 &&
+              utils::isValidTemperature(measure.getAverage(Measurements::Temperature, 1));
+    bool t2 = config.hasSensorPMS2 &&
+              utils::isValidTemperature(measure.getAverage(Measurements::Temperature, 2));
+    if (t1 && t2) {
+      atmpCompensated =
+          round((measure.getCorrectedTempHum(Measurements::Temperature, 1, true) +
+                 measure.getCorrectedTempHum(Measurements::Temperature, 2, true)) /
+                2.0f);
+    } else if (t1 || t2) {
+      atmpCompensated =
+          round(measure.getCorrectedTempHum(Measurements::Temperature, t1 ? 1 : 2, true));
+    }
+
+    bool h1 = config.hasSensorPMS1 &&
+              utils::isValidHumidity(measure.getAverage(Measurements::Humidity, 1));
+    bool h2 = config.hasSensorPMS2 &&
+              utils::isValidHumidity(measure.getAverage(Measurements::Humidity, 2));
+    if (h1 && h2) {
+      rhumCompensated =
+          round((measure.getCorrectedTempHum(Measurements::Humidity, 1, true) +
+                 measure.getCorrectedTempHum(Measurements::Humidity, 2, true)) /
+                2.0f);
+    } else if (h1 || h2) {
+      rhumCompensated =
+          round(measure.getCorrectedTempHum(Measurements::Humidity, h1 ? 1 : 2, true));
+    }
   }
 
   // Add measurements that valid to the metrics
