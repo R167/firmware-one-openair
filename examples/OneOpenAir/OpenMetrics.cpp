@@ -164,12 +164,34 @@ String OpenMetrics::getPayload(void) {
     atmpCompensated = ag->round2(measure.getCorrectedTempHum(Measurements::Temperature));
     rhumCompensated = ag->round2(measure.getCorrectedTempHum(Measurements::Humidity));
   } else {
-    atmpCompensated = ag->round2((measure.getCorrectedTempHum(Measurements::Temperature, 1) +
-                             measure.getCorrectedTempHum(Measurements::Temperature, 2)) /
-                            2.0f);
-    rhumCompensated = ag->round2((measure.getCorrectedTempHum(Measurements::Humidity, 1) +
-                             measure.getCorrectedTempHum(Measurements::Humidity, 2)) /
-                            2.0f);
+    // Same channel selection as the JSON (Measurements::toJson): average only
+    // channels with a valid raw reading, so a single-PMS Open Air (O-1PST)
+    // doesn't average its one channel with channel 2's invalid sentinel.
+    bool t1 = utils::isValidTemperature(measure.getFloat(Measurements::Temperature, 1));
+    bool t2 = utils::isValidTemperature(measure.getFloat(Measurements::Temperature, 2));
+    if (t1 && t2) {
+      atmpCompensated =
+          ag->round2((measure.getCorrectedTempHum(Measurements::Temperature, 1, true) +
+                      measure.getCorrectedTempHum(Measurements::Temperature, 2, true)) /
+                     2.0f);
+    } else if (t1) {
+      atmpCompensated = ag->round2(measure.getCorrectedTempHum(Measurements::Temperature, 1, true));
+    } else if (t2) {
+      atmpCompensated = ag->round2(measure.getCorrectedTempHum(Measurements::Temperature, 2, true));
+    }
+
+    bool h1 = utils::isValidHumidity(measure.getFloat(Measurements::Humidity, 1));
+    bool h2 = utils::isValidHumidity(measure.getFloat(Measurements::Humidity, 2));
+    if (h1 && h2) {
+      rhumCompensated =
+          ag->round2((measure.getCorrectedTempHum(Measurements::Humidity, 1, true) +
+                      measure.getCorrectedTempHum(Measurements::Humidity, 2, true)) /
+                     2.0f);
+    } else if (h1) {
+      rhumCompensated = ag->round2(measure.getCorrectedTempHum(Measurements::Humidity, 1, true));
+    } else if (h2) {
+      rhumCompensated = ag->round2(measure.getCorrectedTempHum(Measurements::Humidity, 2, true));
+    }
   }
 
   // Add measurements that valid to the metrics
